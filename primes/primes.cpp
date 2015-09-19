@@ -41,10 +41,10 @@ int main()
 			{
 				for (int i = iTh * PerThread; i < (iTh+1) * PerThread; i += 1)	if (is_prime(i))	std::cout << i << std::endl;
 			}));
-			join(threads[iTh]);
+			//join(threads[iTh]);
 		}
 
-		//for (auto &&thread : threads)	join(thread);
+		for (auto &&thread : threads)	join(thread);
 	}
 	catch (std::system_error &ex)
 	{
