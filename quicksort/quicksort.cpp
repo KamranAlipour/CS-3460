@@ -1,6 +1,5 @@
 // quicksort.cpp : Defines the entry point for the console application.
 //
-
 #include "stdafx.h"
 
 #include <iostream>
@@ -35,7 +34,7 @@ void quickSort(std::vector<int>& A, int p, int q)
 	if (p<q)
 	{
 		r = partition(A, p, q);
-		if ((q-p)>500000)
+		if ((q - p)>500000)
 		{
 			thread Th1 = create_thread([&A, p, r] {quickSort(A, p, r); });
 
@@ -63,11 +62,11 @@ int main()
 	// Filling the vector of random numbers
 	std::generate(A.begin(), A.end(), std::rand);
 	// Print out the initial vector
-	/*
-	std::cout << "======Original=======" << std::endl;
-	for (auto e : A)	std::cout << e << " ";
-	std::cout << std::endl;
-	*/
+	
+	//std::cout << "======Original=======" << std::endl;
+	//for (auto e : A)	std::cout << e << " ";
+	//std::cout << std::endl;
+	
 
 	// Quick sort algorithm
 	quickSort(A, 0, vec_length);
@@ -81,3 +80,5 @@ int main()
 
 	return 0;
 }
+
+
