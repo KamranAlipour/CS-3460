@@ -46,7 +46,7 @@ void quickSort(std::vector<int>& A, int p, int q)
 	if (p<q)
 	{
 		r = partition(A, p, q);
-		if ((q - p)>250000)
+		if ((q - p)>25000000)
 		{
 			thread Th1 = create_thread([&A, p, r] {quickSort(A, p, r); });
 
@@ -55,17 +55,22 @@ void quickSort(std::vector<int>& A, int p, int q)
 			join(Th1);
 			join(Th2);
 		}
-		else
+		else if ((q - p)>10000000)
 		{
 			quickSort(A, p, r);
 			quickSort(A, r + 1, q);
 		}
+		else
+		{
+			std::sort(A.begin()+p, A.begin()+q);
+		}
 	}
+
 }
 int main()
 {
 	int const NThreads = 4; // this number of threads is only for the primes part and not the sort part
-	int const NLastNum = 1000000;
+	int const NLastNum = 100000000;
 	int const PerThread = NLastNum / NThreads;
 	std::vector<thread> threads;
 	std::vector<int> final_result;
@@ -93,6 +98,8 @@ int main()
 
 		int final_size = final_result.size();
 		quickSort(final_result, 0, final_size);
+
+		//for (auto i : final_result) std::cout << i << std::endl;
 	
 	}
 	catch (std::system_error &ex)
