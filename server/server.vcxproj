@@ -186,9 +186,6 @@
     <ProjectReference Include="..\http_parser\http_parser.vcxproj">
       <Project>{b4a8a0af-36af-43f9-b131-96d126aed981}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\sqlite\sqlite.vcxproj">
-      <Project>{b8b1010f-d82b-4129-ba1d-a1c140d6f661}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

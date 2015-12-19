@@ -19,17 +19,28 @@ namespace async
 			
 			if (rq.method == "GET")
 			{
-				// The address of the static file is in http_request URL and the file should be read from that address
-				const char * f_address = rq.url.c_str() + 1; 
-				auto file_future = cs477::read_file_async(f_address).then([sock](auto file_future) 
+				try
 				{
-					auto file = file_future.get();
-					cs477::net::write_http_response_async(sock, make_response(200, file));
-				});
+					// The address of the static file is in http_request URL and the file should be read from that address
+					const char * f_address = rq.url.c_str() + 1; // to remove the / character from the begining of address string
+					auto file_future = cs477::read_file_async(f_address).then([sock](auto file_future)
+					{
+						auto file = file_future.get();
+						cs477::net::write_http_response_async(sock, make_response(200, file));
+					});
+				}
+				catch (...)
+				{
+					status = 404;
+					auto rsp = make_response(404, {});
+					cs477::net::write_http_response_async(sock, rsp);
+				}
 			}
 			else
 			{
 				status = 404;
+				auto rsp = make_response(404, {});
+				cs477::net::write_http_response_async(sock, rsp);
 			}
 
 			return 0;

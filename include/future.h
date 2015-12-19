@@ -154,10 +154,13 @@ namespace cs477
 
 			lock_guard<> lock(state->mtx);
 
-			auto task = make_task<R>([state, fn = std::move(fn)]() mutable
+			auto tfn = [state, fn = std::move(fn)]() mutable
 			{
 				return fn(future<T>{ state });
-			});
+			};
+			using Tfn = decltype(tfn);
+
+			auto task = make_task<R, Tfn>(std::move(tfn));
 			f = task->p.get_future();
 
 			if (state->state == future_state::not_ready)
@@ -166,7 +169,7 @@ namespace cs477
 			}
 			else
 			{
-				queue_work(task);
+				queue_work<R, Tfn>(task);
 			}
 
 			return f;
@@ -195,6 +198,8 @@ namespace cs477
 			: state(state)
 		{
 		}
+
+		future(future<future<T>> f);
 
 		future(future &&f)
 			: state(f.state)
@@ -243,7 +248,6 @@ namespace cs477
 
 	public:
 		std::shared_ptr<details::shared_state<T>> state;
-
 	};
 
 
@@ -270,6 +274,8 @@ namespace cs477
 		{
 			f.state = nullptr;
 		}
+
+		future(future<future<void>> f);
 
 		future &operator =(future &&f)
 		{
@@ -337,8 +343,6 @@ namespace cs477
 		details::queue_work(task);
 		return f;
 	}
-
-
 
 
 
@@ -474,50 +478,23 @@ namespace cs477
 
 
 
-	template <typename T, typename Iterator> future<std::vector<T>> when_all(Iterator first, Iterator last)
+	template <typename Iterator> auto when_all(Iterator first, Iterator last)
 	{
-		promise<std::vector<T>> p;
-		auto f = p.get_future();
-
-		std::vector<T> list;
-		std::exception_ptr ex;
-		while (first != last)
+		using R = decltype(first->get());
+		future<std::vector<future<R>>> wait_on_all = make_ready_future<std::vector<future<R>>>({});
+		for (auto it = first; it != last; ++it)
 		{
-			try
-			{
-				list.push_back(first->get());
-			}
-			catch (...)
-			{
-				ex = std::current_exception();
-			}
+			future<R> f = std::move(*it);
+			wait_on_all = f.then([w = std::move(wait_on_all)](auto f) mutable {
+				auto vec = w.get();
+				vec.emplace_back(std::move(f));
+				return vec;
+			});
 
-			first++;
 		}
-
-		if (ex)
-		{
-			p.set_exception(ex);
-		}
-		else
-		{
-			p.set(std::move(list));
-		}
-
-		return f;
+		return wait_on_all;
 	}
 
-
-
-	//inline future<void> do_while(std::function<future<bool>()> body) 
-	//{
-	//	return queue_work([=]
-	//	{
-	//		while (body().get())
-	//		{
-	//		}
-	//	});
-	//}
 
 
 

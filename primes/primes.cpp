@@ -9,8 +9,7 @@
 #include "thread.h"
 #include <time.h>
 #include <mutex>
-
-std::mutex MyMutex;
+#include "../include/cs477.h"
 
 bool is_prime(int n)
 {
@@ -22,85 +21,38 @@ bool is_prime(int n)
 	return true;
 }
 
-int partition(std::vector<int>& A, int p, int q)
-{
-	int x = A[p];
-	int i = p;
-	int j;
-	for (j = p + 1; j<q; j++)
-	{
-		if (A[j] <= x)
-		{
-			i++;
-			std::swap(A[i], A[j]);
-		}
-
-	}
-	std::swap(A[i], A[p]);
-	return i;
-}
-
-void quickSort(std::vector<int>& A, int p, int q)
-{
-	int r;
-	if (p<q)
-	{
-		r = partition(A, p, q);
-		if ((q - p)>25000000)
-		{
-			thread Th1 = create_thread([&A, p, r] {quickSort(A, p, r); });
-
-			thread Th2 = create_thread([&A, r, q] {quickSort(A, r + 1, q); });
-
-			join(Th1);
-			join(Th2);
-		}
-		else if ((q - p)>10000000)
-		{
-			quickSort(A, p, r);
-			quickSort(A, r + 1, q);
-		}
-		else
-		{
-			std::sort(A.begin()+p, A.begin()+q);
-		}
-	}
-
-}
 int main()
 {
-	int const NThreads = 4; // this number of threads is only for the primes part and not the sort part
+	int const NThreads = std::thread::hardware_concurrency();
 	int const NLastNum = 100000000;
 	int const PerThread = NLastNum / NThreads;
-	std::vector<thread> threads;
+
 	std::vector<int> final_result;
+
+	std::vector<cs477::future<std::vector<int>>> futures;
 
 	try
 	{
-		
-		for (int iTh = 0; iTh < NThreads; iTh++)
-		{
-			threads.push_back(create_thread([iTh, PerThread,&final_result]
-			{
-				for (int i = iTh * PerThread; i < (iTh + 1) * PerThread; i += 1)
-					if (is_prime(i))
-					{
-						MyMutex.lock();
-						final_result.push_back(i);
-						MyMutex.unlock();
+
+		for (unsigned int iTh = 0; iTh < NThreads; ++iTh) {
+			auto future = cs477::queue_work([iTh, &PerThread] {
+				std::vector<int> vec;
+
+				for (int k = iTh * PerThread; k < (iTh + 1) * PerThread; ++k) {
+					if (is_prime(k)) {
+						vec.push_back(k);
 					}
-			}));
+				}
+				return vec;
+			});
+			futures.push_back(std::move(future));
 		}
 
-		for (auto &&thread : threads)	join(thread);
-		
-		// from my Quick sort project which does the sorting with parallel threading
 
-		int final_size = final_result.size();
-		quickSort(final_result, 0, final_size);
-
-		//for (auto i : final_result) std::cout << i << std::endl;
-	
+		cs477::future<std::vector<cs477::future<std::vector<int>>>> all_returned = cs477::when_all(futures.begin(), futures.end());
+		for (auto&& future : all_returned.get())
+			for (auto&& p : future.get()) 
+				final_result.push_back(p);
 	}
 	catch (std::system_error &ex)
 	{
