@@ -89,7 +89,7 @@ namespace cs477
 
 	}
 
-
+	
 
 
 	inline void *shm_alloc(const std::string &name, size_t size)
@@ -117,7 +117,7 @@ namespace cs477
 
 
 
-
+	
 
 	template <typename T, size_t N>
 	class bounded_buffer
@@ -183,7 +183,7 @@ namespace cs477
 		semaphore _lock;
 	};
 
-
+	
 	template <typename T, size_t N>
 	class bounded_queue
 	{
@@ -460,5 +460,5 @@ namespace cs477
 	};
 
 
-
+	
 }
